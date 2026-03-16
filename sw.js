@@ -1,5 +1,10 @@
-const CACHE = 'seis8-v1';
-const ASSETS = ['./index.html'];
+const CACHE = 'seis8-v2';
+const ASSETS = [
+    '/seis8/index.html',
+    '/seis8/manifest.json',
+    '/seis8/icon-192.png',
+    '/seis8/icon-512.png'
+];
 
 self.addEventListener('install', e => {
     e.waitUntil(
