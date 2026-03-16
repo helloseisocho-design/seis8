@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seis.8 - Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: {
+            bg: '#0a0f0d', card: '#141a17', border: '#2a3530', fg: '#e8ece9', muted: '#8a9690',
+            accent: '#22c55e', danger: '#ef4444', warning: '#f59e0b', info: '#3b82f6'
+        } } } }
+    </script>
+    <style>
+        * { font-family: 'Space Grotesk', sans-serif; box-sizing: border-box; }
+        body { background: #0a0f0d; min-height: 100dvh; margin: 0; }
+        input, select { background: #0d1210; border: 1px solid #2a3530; color: #e8ece9; border-radius: 8px; padding: 10px; width: 100%; }
+        input:focus { border-color: #22c55e; outline: none; }
+        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .badge-pendiente { background: #f59e0b33; color: #f59e0b; }
+        .badge-aprobado  { background: #3b82f633; color: #3b82f6; }
+        .badge-pagado    { background: #22c55e33; color: #22c55e; }
+        .badge-admin     { background: #a855f733; color: #a855f7; }
+        .card { background: #141a17; border: 1px solid #1f2926; border-radius: 12px; }
+        .section { display: none; } .section.active { display: block; }
+        .nav.admin-visible { display: block !important; }
+    </style>
+    <meta name="theme-color" content="#0a0f0d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Seis.8">
+    <link rel="apple-touch-icon" href="data:image/png;base64,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">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-bg text-fg">
+
+    <!-- LOGIN -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-sm text-center">
+            <div class="w-16 h-16 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4 text-bg font-bold text-2xl">6.8</div>
+            <h1 class="text-xl font-bold mb-6">Seis.8</h1>
+            <form id="loginForm" class="space-y-4 text-left">
+                <input type="email" id="userInput" placeholder="Correo electrónico" required class="w-full">
+                <input type="password" id="passInput" placeholder="Contraseña" required class="w-full">
+                <p id="err" class="text-danger text-sm text-center hidden"></p>
+                <button class="w-full py-3 bg-accent text-bg font-bold rounded-lg">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div id="mainApp" class="hidden min-h-screen pb-20">
+        <header class="sticky top-0 bg-bg border-b border-border p-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-bg font-bold text-sm flex-shrink-0">6.8</div>
+                <h2 id="htitle" class="font-bold text-sm">Viáticos</h2>
+            </div>
+            <div class="flex gap-2 items-center text-xs">
+                <span id="uname" class="text-muted"></span>
+                <button id="logout" class="text-danger font-bold">Salir</button>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <!-- VIÁTICOS -->
+            <section id="sVia" class="section active">
+                <div class="card p-3 mb-3">
+                    <p class="text-muted text-xs mb-1">Total General</p>
+                    <b id="tVia" class="text-accent text-xl">$0</b>
+                </div>
+                <div id="viaEventos" class="space-y-1 mb-3 text-sm"></div>
+                <button onclick="openModal('via')" class="w-full card p-2 mb-3 text-accent border-dashed border-2">+ Agregar</button>
+                <div id="lVia" class="space-y-2"></div>
+            </section>
+
+            <!-- REEMBOLSOS -->
+            <section id="sRee" class="section">
+                <div class="card p-3 mb-3">
+                    <p class="text-muted text-xs mb-1">Por Pagar</p>
+                    <b id="tRee" class="text-warning text-xl">$0</b>
+                </div>
+                <button onclick="openModal('ree')" class="w-full card p-2 mb-3 text-warning border-dashed border-2">+ Agregar</button>
+                <div id="lRee" class="space-y-2"></div>
+                <div id="lReeHist" class="mt-4"></div>
+            </section>
+
+            <!-- VACACIONES -->
+            <section id="sVac" class="section">
+                <div class="card p-3 mb-3">
+                    <p class="text-muted text-xs mb-1">Días Disponibles</p>
+                    <b id="tVac" class="text-info text-xl">15</b>
+                    <p id="vacPendientes" class="text-xs text-muted mt-1"></p>
+                </div>
+                <button onclick="openModal('vac')" class="w-full card p-2 mb-3 text-info border-dashed border-2">+ Solicitar</button>
+                <div id="lVac" class="space-y-2"></div>
+            </section>
+
+            <!-- ADMIN -->
+            <section id="sAdm" class="section">
+                <div id="adminContent"></div>
+            </section>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around p-2">
+            <b class="nav active" data-s="sVia">Via</b>
+            <b class="nav" data-s="sRee">Ree</b>
+            <b class="nav" data-s="sVac">Vac</b>
+            <b id="navAdm" class="nav hidden" data-s="sAdm">Admin</b>
+        </nav>
+    </div>
+
+    <!-- MODAL -->
+    <div id="mod" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
+        <div class="card p-4 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between mb-3">
+                <h3 id="mTit" class="font-bold"></h3>
+                <button onclick="$('mod').classList.add('hidden')" class="text-muted">✕</button>
+            </div>
+            <div id="mBod"></div>
+        </div>
+    </div>
+
+    <script>
+    const API = 'https://script.google.com/macros/s/AKfycby5h9BDXmw4cN5I_Ep76tFHvxx0_Fet5fitCxxund6B0q7gbob7HNfK5iXBxuoVEvm7/exec';
+    const TOK = 'seis8_token_2024';
+
+    const $ = id => document.getElementById(id);
+    const fmt = n => new Intl.NumberFormat('es-MX', {style:'currency', currency:'MXN'}).format(n);
+    const fdt = d => d ? new Date(d).toLocaleDateString('es-MX', {day:'numeric', month:'short'}) : '-';
+    const bdg = s => `<span class="badge badge-${s}">${s}</span>`;
+
+    let u = null;
+    let d = {viaticos:[], reembolsos:[], vacaciones:[], usuarios:{}};
+    let selectedUser = null;
+
+    // ─── API ─────────────────────────────────────────────────────────────────
+    async function api(act, params) {
+        try {
+            const datosStr = params.datos || '';
+            const tieneArchivo = datosStr && (() => {
+                try { return !!JSON.parse(datosStr).archivoBase64; } catch(e) { return false; }
+            })();
+
+            if (tieneArchivo) {
+                const body = new URLSearchParams({accion: act, token: TOK, ...params});
+                const res = await fetch(API, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: body.toString()
+                });
+                const text = await res.text();
+                try { return JSON.parse(text); } catch(e) { return {error: text}; }
+            }
+
+            let url = `${API}?accion=${act}&token=${TOK}`;
+            for (let k in params) url += `&${k}=${encodeURIComponent(params[k])}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            try { return JSON.parse(text); } catch(e) { return {error: text}; }
+        } catch(e) { return {error: 'Red: ' + e.message}; }
+    }
+
+    // ─── UTILIDADES ──────────────────────────────────────────────────────────
+    function calcDias(fi, ff) {
+        let dias = 0, act = new Date(fi), fin = new Date(ff);
+        if (fi > ff) return 0;
+        while (act <= fin) { if (act.getDay() !== 0) dias++; act.setDate(act.getDate() + 1); }
+        return dias;
+    }
+
+    function groupBy(arr, key) {
+        return arr.reduce((a, i) => {
+            const k = i[key] || 'Sin dato';
+            if (!a[k]) a[k] = {total:0, items:[]};
+            a[k].total += (i.monto || 0);
+            a[k].items.push(i);
+            return a;
+        }, {});
+    }
+
+    // ─── RENDER PRINCIPAL ────────────────────────────────────────────────────
+    function render() {
+        if (!u) return;
+        renderViaticos();
+        renderReembolsos();
+        renderVacaciones();
+        if (u.isAdmin) {
+            selectedUser ? renderAdminDetail(selectedUser) : renderAdminGeneral();
+        }
+    }
+
+    // ─── VIÁTICOS ────────────────────────────────────────────────────────────
+    function renderViaticos() {
+        let lista = d.viaticos.filter(x => x.uid === u.email);
+        $('tVia').innerText = fmt(lista.reduce((s, x) => s + (x.monto || 0), 0));
+
+        let g = groupBy(lista, 'evento');
+        $('viaEventos').innerHTML = Object.entries(g).map(([k, o]) =>
+            `<div class="flex justify-between p-1 bg-bg rounded text-xs"><span>${k}</span><b>${fmt(o.total)}</b></div>`
+        ).join('');
+
+        $('lVia').innerHTML = lista.length ? lista.map(v => `
+            <div class="card p-2 text-sm">
+                <div class="flex justify-between">
+                    <b>${v.concepto}</b>
+                    <b class="text-accent">${fmt(v.monto)}</b>
+                </div>
+                <p class="text-xs text-muted">${v.evento || ''} · ${fdt(v.fecha)}</p>
+                ${v.foto ? `<a href="${v.foto}" target="_blank" class="text-xs text-info underline">Ver comprobante</a>` : ''}
+            </div>
+        `).join('') : '<p class="text-center text-muted text-xs p-2">Vacío</p>';
+    }
+
+    // ─── REEMBOLSOS ──────────────────────────────────────────────────────────
+    function renderReembolsos() {
+        let lista = d.reembolsos.filter(x => x.uid === u.email);
+        let pen  = lista.filter(x => x.estado === 'pendiente');
+        let hist = lista.filter(x => x.estado === 'pagado');
+
+        $('tRee').innerText = fmt(pen.reduce((s, x) => s + (x.monto || 0), 0));
+
+        $('lRee').innerHTML = pen.length ? pen.map(r => `
+            <div class="card p-2 text-sm">
+                <div class="flex justify-between">
+                    <b>${r.concepto}</b>
+                    <b class="text-warning">${fmt(r.monto)}</b>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-xs text-muted">${fdt(r.fecha)}</span>
+                    ${bdg(r.estado)}
+                </div>
+                ${r.foto ? `<a href="${r.foto}" target="_blank" class="text-xs text-info underline">Ver comprobante</a>` : ''}
+            </div>
+        `).join('') : '<p class="text-center text-muted text-xs p-2">Sin pendientes</p>';
+
+        $('lReeHist').innerHTML = hist.length ? `
+            <p class="text-muted text-xs mb-1">Historial:</p>
+            ${hist.map(r => `
+                <div class="card p-2 text-sm opacity-60">
+                    <div class="flex justify-between">
+                        <b>${r.concepto}</b>
+                        <b>${fmt(r.monto)}</b>
+                    </div>
+                    <p class="text-xs text-muted">Pagado: ${fdt(r.fechaPago)}</p>
+                    ${r.foto ? `<a href="${r.foto}" target="_blank" class="text-xs text-info underline">Ver comprobante</a>` : ''}
+                </div>
+            `).join('')}
+        ` : '';
+    }
+
+    // ─── VACACIONES ──────────────────────────────────────────────────────────
+    function renderVacaciones() {
+        let lista = d.vacaciones.filter(x => x.uid === u.email);
+
+        let usados = 0;
+        lista.forEach(x => { if (x.estado === 'aprobado') usados += (parseInt(x.dias) || 0); });
+
+        const diasBase = (d.usuarios && d.usuarios[u.email] && d.usuarios[u.email].diasVac)
+            ? parseInt(d.usuarios[u.email].diasVac)
+            : 15;
+        $('tVac').innerText = Math.max(0, diasBase - usados);
+
+        let pendDias = 0;
+        lista.forEach(x => { if (x.estado === 'pendiente') pendDias += (parseInt(x.dias) || 0); });
+        $('vacPendientes').innerText = pendDias > 0 ? `${pendDias} días en espera de aprobación` : '';
+
+        $('lVac').innerHTML = lista.length ? lista.map(v => `
+            <div class="card p-2 text-sm">
+                <div class="flex justify-between">
+                    <b>${v.dias} días hábiles</b>
+                    ${bdg(v.estado)}
+                </div>
+                <p class="text-xs text-muted">${fdt(v.fechaInicio)} → ${fdt(v.fechaFin)}</p>
+            </div>
+        `).join('') : '<p class="text-center text-muted text-xs p-2">Vacío</p>';
+    }
+
+    // ─── ADMIN GENERAL ───────────────────────────────────────────────────────
+    function renderAdminGeneral() {
+        $('adminContent').innerHTML = `
+            <h3 class="font-bold mb-3 text-lg">Panel Admin</h3>
+
+            <div class="card p-3 mb-3 border-l-4 border-purple-500">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="font-bold text-sm">Usuarios</p>
+                    <button onclick="openModal('usr')" class="text-xs text-purple-400 border border-purple-400/30 rounded px-2 py-1">+ Agregar</button>
+                </div>
+                <div id="admUsers" class="space-y-1 text-sm max-h-40 overflow-y-auto"></div>
+            </div>
+
+            <div class="card p-3 mb-3">
+                <p class="text-muted text-xs mb-2">Deudas por Usuario (Reembolsos pendientes)</p>
+                <div id="admDeudas" class="space-y-1 text-sm"></div>
+            </div>
+
+            <div class="card p-3 mb-3">
+                <p class="text-muted text-xs mb-2">Gastos por Evento</p>
+                <div id="admEventos" class="space-y-1 text-sm"></div>
+            </div>
+
+            <div class="card p-3">
+                <p class="text-muted text-xs mb-2">Vacaciones pendientes por aprobar</p>
+                <div id="lAdm" class="space-y-2"></div>
+            </div>
+        `;
+
+        const users = d.usuarios || {};
+
+        // Lista de usuarios
+        $('admUsers').innerHTML = Object.entries(users).map(([id, obj]) => `
+            <div onclick="selectUser('${id}')" class="flex justify-between items-center bg-bg p-2 rounded cursor-pointer hover:opacity-80">
+                <span class="text-info underline">${obj.nombre}</span>
+                <div class="flex items-center gap-2">
+                    ${obj.isAdmin ? '<span class="badge badge-admin">Admin</span>' : ''}
+                    <span class="text-xs text-muted">${obj.diasVac || 15} días</span>
+                </div>
+            </div>
+        `).join('') || '<p class="text-xs text-muted">Sin usuarios</p>';
+
+        // Deudas por usuario
+        let deudas = groupBy(d.reembolsos.filter(x => x.estado === 'pendiente'), 'uid');
+        $('admDeudas').innerHTML = Object.keys(deudas).length ? Object.entries(deudas).map(([id, o]) => `
+            <div class="flex justify-between items-center bg-bg p-2 rounded">
+                <span class="text-info underline cursor-pointer" onclick="selectUser('${id}')">${(users[id] || {}).nombre || id}</span>
+                <div class="flex items-center gap-2">
+                    <b class="text-warning">${fmt(o.total)}</b>
+                    <button onclick="selectUser('${id}')" class="text-xs bg-card px-2 py-1 rounded">Ver</button>
+                </div>
+            </div>
+        `).join('') : '<p class="text-xs text-muted">Sin deudas pendientes</p>';
+
+        // Gastos por evento
+        let evs = groupBy(d.viaticos, 'evento');
+        $('admEventos').innerHTML = Object.keys(evs).length ? Object.entries(evs).map(([k, o]) =>
+            `<div class="flex justify-between"><span>${k}</span><b class="text-accent">${fmt(o.total)}</b></div>`
+        ).join('') : '<p class="text-xs text-muted">Sin datos</p>';
+
+        // Vacaciones pendientes
+        let vPend = d.vacaciones.filter(x => x.estado === 'pendiente');
+        $('lAdm').innerHTML = vPend.length ? vPend.map(v => `
+            <div class="card p-2 text-xs">
+                <div class="flex justify-between items-center">
+                    <b>${v.dias} días hábiles</b>
+                    ${bdg(v.estado)}
+                </div>
+                <p class="text-muted mt-1">${(users[v.uid] || {}).nombre || v.uid}</p>
+                <p class="text-muted">${fdt(v.fechaInicio)} → ${fdt(v.fechaFin)}</p>
+                <button onclick="chg('vacacion','${v.id}','aprobado')" class="mt-2 text-xs bg-info/20 text-info px-2 py-1 rounded w-full">✓ Aprobar</button>
+            </div>
+        `).join('') : '<p class="text-center text-muted text-xs p-2">Nada pendiente</p>';
+    }
+
+    // ─── ADMIN DETALLE USUARIO ───────────────────────────────────────────────
+    function renderAdminDetail(uid) {
+        const user   = (d.usuarios || {})[uid] || {nombre: uid};
+        const vList  = d.viaticos.filter(x => x.uid === uid);
+        const rList  = d.reembolsos.filter(x => x.uid === uid);
+        const vacList = d.vacaciones.filter(x => x.uid === uid);
+
+        const rPend  = rList.filter(x => x.estado === 'pendiente');
+        const rPagado = rList.filter(x => x.estado === 'pagado');
+        const totalDeuda = rPend.reduce((s, x) => s + (x.monto || 0), 0);
+
+        $('adminContent').innerHTML = `
+            <button onclick="clearSelectedUser()" class="mb-4 text-accent text-sm flex items-center gap-1">← Todos los usuarios</button>
+
+            <div class="card p-3 mb-3 border-l-4 border-accent">
+                <h3 class="font-bold">${user.nombre}</h3>
+                <p class="text-xs text-muted">${uid}</p>
+                ${totalDeuda > 0 ? `<p class="text-xs text-warning mt-1">Deuda pendiente: ${fmt(totalDeuda)}</p>` : ''}
+            </div>
+
+            <!-- Viáticos -->
+            <div class="card p-3 mb-3">
+                <p class="text-muted text-xs mb-2">Viáticos (${vList.length})</p>
+                ${vList.length ? vList.map(v => `
+                    <div class="flex justify-between items-start py-1 border-b border-border text-xs">
+                        <div>
+                            <p class="font-bold">${v.concepto}</p>
+                            <p class="text-muted">${v.evento || 'Sin evento'} · ${fdt(v.fecha)}</p>
+                            ${v.foto ? `<a href="${v.foto}" target="_blank" class="text-info underline">Ver comprobante</a>` : ''}
+                        </div>
+                        <b class="text-accent ml-2">${fmt(v.monto)}</b>
+                    </div>
+                `).join('') : '<p class="text-xs text-muted">Sin registros</p>'}
+            </div>
+
+            <!-- Reembolsos pendientes -->
+            <div class="card p-3 mb-3">
+                <p class="text-muted text-xs mb-2">Reembolsos pendientes</p>
+                ${rPend.length ? rPend.map(r => `
+                    <div class="card p-2 mb-2 text-xs">
+                        <div class="flex justify-between">
+                            <b>${r.concepto}</b>
+                            <b class="text-warning">${fmt(r.monto)}</b>
+                        </div>
+                        <p class="text-muted">${fdt(r.fecha)}</p>
+                        ${r.foto ? `<a href="${r.foto}" target="_blank" class="text-info underline">Ver comprobante</a>` : '<span class="text-muted opacity-50">Sin comprobante</span>'}
+                        <button onclick="chg('reembolso','${r.id}','pagado')" class="mt-2 w-full bg-accent/20 text-accent rounded py-1 font-bold">✓ Registrar pago</button>
+                    </div>
+                `).join('') : '<p class="text-xs text-muted">Sin pendientes</p>'}
+            </div>
+
+            <!-- Historial de reembolsos pagados -->
+            ${rPagado.length ? `
+            <div class="card p-3 mb-3">
+                <p class="text-muted text-xs mb-2">Reembolsos pagados</p>
+                ${rPagado.map(r => `
+                    <div class="card p-2 mb-1 text-xs opacity-70">
+                        <div class="flex justify-between">
+                            <b>${r.concepto}</b>
+                            <b class="text-accent">${fmt(r.monto)}</b>
+                        </div>
+                        <p class="text-muted">Pagado: ${fdt(r.fechaPago)}</p>
+                    </div>
+                `).join('')}
+            </div>` : ''}
+
+            <!-- Vacaciones -->
+            <div class="card p-3">
+                <p class="text-muted text-xs mb-2">Vacaciones</p>
+                ${vacList.length ? vacList.map(v => `
+                    <div class="card p-2 mb-2 text-xs">
+                        <div class="flex justify-between items-center">
+                            <b>${v.dias} días hábiles</b>
+                            ${bdg(v.estado)}
+                        </div>
+                        <p class="text-muted">${fdt(v.fechaInicio)} → ${fdt(v.fechaFin)}</p>
+                        ${v.estado === 'pendiente' ? `<button onclick="chg('vacacion','${v.id}','aprobado')" class="mt-2 w-full bg-info/20 text-info rounded py-1">✓ Aprobar</button>` : ''}
+                    </div>
+                `).join('') : '<p class="text-xs text-muted">Sin registros</p>'}
+            </div>
+        `;
+    }
+
+    window.selectUser     = id => { selectedUser = id; render(); };
+    window.clearSelectedUser = () => { selectedUser = null; render(); };
+
+    // ─── CARGAR DATOS ────────────────────────────────────────────────────────
+    async function load() {
+        const res = await api(u.isAdmin ? 'getAdminDatos' : 'getDatos', {email: u.email});
+        if (res.viaticos)   d.viaticos   = res.viaticos;
+        if (res.reembolsos) d.reembolsos = res.reembolsos;
+        if (res.vacaciones) d.vacaciones = res.vacaciones;
+        if (res.usuarios)   d.usuarios   = res.usuarios;
+        render();
+    }
+
+    // ─── CAMBIAR ESTADO ──────────────────────────────────────────────────────
+    window.chg = async (tipo, id, nuevo) => {
+        if (!confirm('¿Confirmar acción?')) return;
+        const res = await api('cambiarEstatus', {tipo, id, nuevo, email: u.email});
+        if (res.ok) load();
+        else alert('Error: ' + res.error);
+    };
+
+    // ─── MODALES ─────────────────────────────────────────────────────────────
+    function openModal(t) {
+        let h = '';
+        if (t === 'via') {
+            $('mTit').innerText = "Viático";
+            h = `<form onsubmit="sv('via',event)" class="space-y-2">
+                <input name="fecha" type="date" required>
+                <input name="evento" placeholder="Evento" required>
+                <input name="concepto" placeholder="Concepto" required>
+                <input name="monto" type="number" step="0.01" placeholder="Monto" required>
+                <div>
+                    <p class="text-xs text-muted mb-1">Comprobante (opcional)</p>
+                    <input type="file" id="fileVia" accept="image/*,application/pdf" class="text-xs">
+                </div>
+                <button class="w-full p-2 bg-accent text-bg rounded font-bold">Guardar</button>
+            </form>`;
+        }
+        if (t === 'ree') {
+            $('mTit').innerText = "Reembolso";
+            h = `<form onsubmit="sv('ree',event)" class="space-y-2">
+                <input name="fecha" type="date" required>
+                <input name="evento" placeholder="Evento" required>
+                <input name="concepto" placeholder="Concepto" required>
+                <input name="monto" type="number" step="0.01" placeholder="Monto" required>
+                <div>
+                    <p class="text-xs text-muted mb-1">Comprobante (opcional)</p>
+                    <input type="file" id="fileRee" accept="image/*,application/pdf" class="text-xs">
+                </div>
+                <button class="w-full p-2 bg-warning text-bg rounded font-bold">Guardar</button>
+            </form>`;
+        }
+        if (t === 'vac') {
+            $('mTit').innerText = "Solicitar Vacaciones";
+            h = `<form onsubmit="sv('vac',event)" class="space-y-2">
+                <label class="text-xs text-muted">Fecha inicio</label>
+                <input name="fi" type="date" required>
+                <label class="text-xs text-muted">Fecha fin</label>
+                <input name="ff" type="date" required>
+                <p id="diasCalc" class="text-xs text-info"></p>
+                <button class="w-full p-2 bg-info text-bg rounded font-bold">Solicitar</button>
+            </form>`;
+            setTimeout(() => {
+                const fi = document.querySelector('[name=fi]');
+                const ff = document.querySelector('[name=ff]');
+                const upd = () => {
+                    if (fi.value && ff.value) {
+                        const n = calcDias(fi.value, ff.value);
+                        $('diasCalc').innerText = n > 0 ? `${n} días hábiles (sin domingos)` : 'Rango inválido';
+                    }
+                };
+                fi.addEventListener('change', upd);
+                ff.addEventListener('change', upd);
+            }, 100);
+        }
+        if (t === 'usr') {
+            $('mTit').innerText = "Nuevo Usuario";
+            h = `<form onsubmit="sv('usr',event)" class="space-y-2">
+                <input name="nombre" placeholder="Nombre completo" required>
+                <input name="email" type="email" placeholder="Correo (será su usuario)" required>
+                <select name="rol">
+                    <option value="false">Empleado</option>
+                    <option value="true">Admin</option>
+                </select>
+                <input name="dias" type="number" placeholder="Días de vacaciones" value="15">
+                <button class="w-full p-2 bg-purple-500 text-white rounded font-bold">Guardar</button>
+            </form>`;
+        }
+        $('mBod').innerHTML = h;
+        $('mod').classList.remove('hidden');
+    }
+
+    // ─── GUARDAR FORMULARIOS ─────────────────────────────────────────────────
+    window.sv = async (t, e) => {
+        e.preventDefault();
+        const f = e.target;
+        let o = {uid: u.email};
+        let res;
+
+        if (t === 'via') {
+            o.fecha    = f.fecha.value;
+            o.evento   = f.evento.value;
+            o.concepto = f.concepto.value;
+            o.monto    = parseFloat(f.monto.value);
+            o.tipo     = 'Gasto';
+            o.metodo   = 'Efectivo';
+            const fv = document.getElementById('fileVia');
+            if (fv && fv.files[0]) {
+                const file = fv.files[0];
+                o.archivoBase64 = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = ev => r(ev.target.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+                o.archivoNombre = file.name;
+                o.archivoTipo   = file.type;
+            }
+            res = await api('guardarViatico', {datos: JSON.stringify(o)});
+        }
+
+        if (t === 'ree') {
+            o.fecha    = f.fecha.value;
+            o.evento   = f.evento.value;
+            o.concepto = f.concepto.value;
+            o.monto    = parseFloat(f.monto.value);
+            o.tipoComp = 'Ticket';
+            o.estado   = 'pendiente';
+            const fr = document.getElementById('fileRee');
+            if (fr && fr.files[0]) {
+                const file = fr.files[0];
+                o.archivoBase64 = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = ev => r(ev.target.result.split(',')[1]);
+                    reader.readAsDataURL(file);
+                });
+                o.archivoNombre = file.name;
+                o.archivoTipo   = file.type;
+            }
+            res = await api('guardarReembolso', {datos: JSON.stringify(o)});
+        }
+
+        if (t === 'vac') {
+            o.fechaInicio = f.fi.value;
+            o.fechaFin    = f.ff.value;
+            o.dias        = calcDias(f.fi.value, f.ff.value);
+            o.estado      = 'pendiente';
+            if (o.dias <= 0) { alert('Rango de fechas inválido'); return; }
+            res = await api('guardarVacacion', {datos: JSON.stringify(o)});
+        }
+
+        if (t === 'usr') {
+            o.nombre  = f.nombre.value;
+            o.email   = f.email.value;
+            o.isAdmin = f.rol.value === 'true';
+            o.diasVac = parseInt(f.dias.value) || 15;
+            res = await api('guardarUsuario', {datos: JSON.stringify(o), email: u.email});
+        }
+
+        if (res && res.ok) {
+            $('mod').classList.add('hidden');
+            load();
+        } else {
+            alert('Error: ' + (res ? res.error : 'Sin respuesta'));
+        }
+    };
+
+    // ─── LOGIN ────────────────────────────────────────────────────────────────
+    $('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        $('err').classList.add('hidden');
+        const res = await api('login', {email: $('userInput').value});
+        if (res.ok) {
+            const exp = res.usuario.nombre.toLowerCase().replace(/ /g, '') + '68';
+            if ($('passInput').value.toLowerCase() === exp) {
+                u = res.usuario;
+                $('loginScreen').classList.add('hidden');
+                $('mainApp').classList.remove('hidden');
+                $('uname').innerText = u.nombre;
+                if (u.isAdmin) {
+                    $('navAdm').classList.remove('hidden');
+                    $('navAdm').classList.add('admin-visible');
+                }
+                load();
+            } else {
+                $('err').innerText = 'Contraseña incorrecta';
+                $('err').classList.remove('hidden');
+            }
+        } else {
+            $('err').innerText = res.error || 'Error al iniciar sesión';
+            $('err').classList.remove('hidden');
+        }
+    };
+
+    // ─── NAVEGACIÓN ──────────────────────────────────────────────────────────
+    document.querySelectorAll('.nav').forEach(n => n.onclick = function() {
+        if (selectedUser && this.dataset.s !== 'sAdm') selectedUser = null;
+        document.querySelectorAll('.nav').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        $(this.dataset.s).classList.add('active');
+        const titles = {sVia:'Viáticos', sRee:'Reembolsos', sVac:'Vacaciones', sAdm:'Admin'};
+        $('htitle').innerText = titles[this.dataset.s];
+        render();
+    });
+
+    $('logout').onclick = () => { u = null; d = {viaticos:[], reembolsos:[], vacaciones:[], usuarios:{}}; location.reload(); };
+    </script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
+    </script>
+</body>
+</html>
