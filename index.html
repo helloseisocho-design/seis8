@@ -880,7 +880,7 @@ window.clearSelectedUser = () => { selectedUser=null; renderAdminGeneral(); };
 // ─── MODALES ─────────────────────────────────────────────────────────────
 function closeModal() { $('mod').classList.remove('open'); }
 
-window.openModal = function(t) {
+window.openModal = async function(t) {
   let h = '';
   if (t==='via') {
     $('mTit').innerText='Nuevo Viático';
@@ -930,8 +930,13 @@ window.openModal = function(t) {
        <button type="button" onclick="sv('prov',this.closest('.modal-box'))" class="btn-red" style="margin-top:8px">GUARDAR</button>`;
   }
   if (t==='sol') {
-    const provOpts = (d.proveedores||[]).map(p=>`<option value="${p.id}" data-nombre="${p.nombre}">${p.nombre}</option>`).join('');
     $('mTit').innerText='Solicitar Pago a Proveedor';
+    // Cargar proveedores frescos antes de mostrar el modal
+    if (!d.proveedores || !d.proveedores.length) {
+      const rp = await api('getProveedores', {email: u.email});
+      if (rp.ok && rp.proveedores) d.proveedores = rp.proveedores;
+    }
+    const provOpts = (d.proveedores||[]).map(p=>`<option value="${p.id}" data-nombre="${p.nombre}">${p.nombre}</option>`).join('');
     h=`<div class="form-group"><label class="form-label">Proveedor</label>
          <select name="proveedorId" id="selProv" class="form-select" required>
            <option value="">— Selecciona proveedor —</option>
