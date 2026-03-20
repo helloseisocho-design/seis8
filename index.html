@@ -858,6 +858,10 @@ async function load() {
   if (res.solicitudes) d.solicitudes = res.solicitudes;
   if (res.pagos)      d.pagos      = res.pagos;
   if (res.proveedores) d.proveedores = res.proveedores;
+  if (!d.proveedores || !d.proveedores.length) {
+    const rp = await api("getProveedores", {email: u.email});
+    if (rp.ok && rp.proveedores) d.proveedores = rp.proveedores;
+  }
   await cargarEventos();
   render();
 }
@@ -1078,7 +1082,11 @@ $('loginForm').onsubmit = async function(e) {
       $('loginScreen').style.display='none';
       $('mainApp').style.display='block';
       $('uname').innerText = u.nombre;
-      if (u.isAdmin) { $('navAdm').style.display='flex'; }
+      if (u.isAdmin) {
+        $('navAdm').style.display='flex';
+        $('navAdm').style.flexDirection='column';
+        $('navAdm').style.alignItems='center';
+      }
       load();
     } else { err.innerText='Contraseña incorrecta'; err.style.display='block'; }
   } else { err.innerText=res.error||'Error al iniciar sesión'; err.style.display='block'; }
