@@ -541,6 +541,8 @@ const $ = id => document.getElementById(id);
 const fmt = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n||0);
 const fdt = d => d ? new Date(d).toLocaleDateString('es-MX',{day:'numeric',month:'short'}) : '—';
 const bdg = s => `<span class="badge badge-${s}">${s}</span>`;
+const norm = e => (e||'').toLowerCase().trim();
+const sinAcentos = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
 function toast(msg, duration=2800) {
   const t = $('toast');
@@ -641,7 +643,7 @@ function render() {
 
 // ─── VIÁTICOS ────────────────────────────────────────────────────────────
 function renderViaticos() {
-  let lista = d.viaticos.filter(x=>x.uid===u.email);
+  let lista = d.viaticos.filter(x=>norm(x.uid)===norm(u.email));
   $('tVia').innerText = fmt(lista.reduce((s,x)=>s+(parseFloat(x.monto)||0),0));
   let g = groupBy(lista,'evento');
   $('viaEventos').innerHTML = Object.entries(g).map(([k,o])=>`
@@ -660,7 +662,7 @@ function renderViaticos() {
 
 // ─── REEMBOLSOS ──────────────────────────────────────────────────────────
 function renderReembolsos() {
-  let lista = d.reembolsos.filter(x=>x.uid===u.email);
+  let lista = d.reembolsos.filter(x=>norm(x.uid)===norm(u.email));
   let pen = lista.filter(x=>x.estado==='pendiente');
   let hist = lista.filter(x=>x.estado==='pagado');
   $('tRee').innerText = fmt(pen.reduce((s,x)=>s+(parseFloat(x.monto)||0),0));
@@ -689,10 +691,10 @@ function renderReembolsos() {
 
 // ─── VACACIONES ──────────────────────────────────────────────────────────
 function renderVacaciones() {
-  let lista = d.vacaciones.filter(x=>x.uid===u.email);
+  let lista = d.vacaciones.filter(x=>norm(x.uid)===norm(u.email));
   let usados=0;
   lista.forEach(x=>{ if(x.estado==='aprobado') usados+=(parseInt(x.dias)||0); });
-  const diasBase = (d.usuarios&&d.usuarios[u.email]&&d.usuarios[u.email].diasVac) ? parseInt(d.usuarios[u.email].diasVac) : 15;
+  const diasBase = (d.usuarios&&d.usuarios[norm(u.email)]&&d.usuarios[norm(u.email)].diasVac) ? parseInt(d.usuarios[norm(u.email)].diasVac) : 15;
   $('tVac').innerText = Math.max(0,diasBase-usados);
   let pendDias=0;
   lista.forEach(x=>{ if(x.estado==='pendiente') pendDias+=(parseInt(x.dias)||0); });
@@ -709,7 +711,7 @@ function renderVacaciones() {
 
 // ─── PROVEEDORES (vista empleado) ────────────────────────────────────────
 function renderProveedores() {
-  let misSol = d.solicitudes.filter(x=>x.uid===u.email);
+  let misSol = d.solicitudes.filter(x=>norm(x.uid)===norm(u.email));
   let pendientes = misSol.filter(x=>x.estado==='pendiente');
   let montoPend = 0;
   pendientes.forEach(sol=>{
@@ -835,9 +837,9 @@ function renderAdminGeneral() {
 // ─── ADMIN DETALLE USUARIO ───────────────────────────────────────────────
 function renderAdminDetail(uid) {
   const user = (d.usuarios||{})[uid]||{nombre:uid};
-  const vList = d.viaticos.filter(x=>x.uid===uid);
-  const rList = d.reembolsos.filter(x=>x.uid===uid);
-  const vacList = d.vacaciones.filter(x=>x.uid===uid);
+  const vList = d.viaticos.filter(x=>norm(x.uid)===norm(uid));
+  const rList = d.reembolsos.filter(x=>norm(x.uid)===norm(uid));
+  const vacList = d.vacaciones.filter(x=>norm(x.uid)===norm(uid));
   const rPend = rList.filter(x=>x.estado==='pendiente');
   const rPagado = rList.filter(x=>x.estado==='pagado');
   const totalDeuda = rPend.reduce((s,x)=>s+(parseFloat(x.monto)||0),0);
@@ -1107,19 +1109,34 @@ window.descargarReporteBancario = function() {
 
 // ─── CARGAR DATOS ────────────────────────────────────────────────────────
 async function load() {
-  const res = await api(u.isAdmin?'getAdminDatos':'getDatos',{email:u.email});
+  // Mostrar indicador de carga en la sección activa
+  const secActiva = document.querySelector('.section.active');
+  const loadDiv = document.createElement('div');
+  loadDiv.id = 'loadingIndicator';
+  loadDiv.className = 'loading-overlay';
+  loadDiv.innerHTML = '<div class="loader"></div><span>Cargando...</span>';
+  if (secActiva) secActiva.prepend(loadDiv);
+
+  const res = await api(u.isAdmin?'getAdminDatos':'getDatos',{email:norm(u.email)});
   if (res.viaticos)    d.viaticos    = res.viaticos;
   if (res.reembolsos)  d.reembolsos  = res.reembolsos;
   if (res.vacaciones)  d.vacaciones  = res.vacaciones;
-  if (res.usuarios)    d.usuarios    = res.usuarios;
+  // Normalizar claves de usuarios a minúsculas
+  if (res.usuarios) {
+    d.usuarios = {};
+    Object.entries(res.usuarios).forEach(([k,v])=>{ d.usuarios[norm(k)] = v; });
+  }
   if (res.solicitudes) d.solicitudes = res.solicitudes;
   if (res.pagos)       d.pagos       = res.pagos;
   if (res.proveedores) d.proveedores = res.proveedores;
   if (!d.proveedores || !d.proveedores.length) {
-    const rp = await api('getProveedores', {email: u.email});
+    const rp = await api('getProveedores', {email: norm(u.email)});
     if (rp.ok && rp.proveedores) d.proveedores = rp.proveedores;
   }
   await cargarEventos();
+  // Quitar indicador de carga
+  const li = $('loadingIndicator');
+  if (li) li.remove();
   render();
 }
 
@@ -1259,7 +1276,7 @@ window.calcPagosParciales = function() {
 // ─── GUARDAR FORMULARIOS ─────────────────────────────────────────────────
 window.sv = async function(t, box) {
   const getName = n => box.querySelector(`[name="${n}"]`)?.value||'';
-  let o = {uid:u.email}, res;
+  let o = {uid:norm(u.email)}, res;
 
   if (t==='via') {
     const evento = await resolveEvento('eventoVia');
@@ -1336,12 +1353,14 @@ $('loginForm').onsubmit = async function(e) {
   err.style.display='none';
   const btn = this.querySelector('button');
   btn.textContent='...';
-  const res = await api('login',{email:$('userInput').value});
+  const emailInput = $('userInput').value.toLowerCase().trim();
+  const res = await api('login',{email:emailInput});
   btn.textContent='Ingresar';
   if (res.ok) {
-    const exp = res.usuario.nombre.toLowerCase().replace(/ /g,'')+('68');
+    const exp = sinAcentos(res.usuario.nombre.toLowerCase().replace(/ /g,''))+'68';
     if ($('passInput').value.toLowerCase()===exp) {
       u = res.usuario;
+      u.email = norm(u.email || emailInput);
       $('loginScreen').style.display='none';
       $('mainApp').style.display='block';
       $('uname').innerText = u.nombre;
